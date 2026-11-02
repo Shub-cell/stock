@@ -73,9 +73,27 @@ export async function setQuantity(fd: FormData) {
   done()
 }
 
+
 export async function deleteItem(fd: FormData) {
-  const { s } = await requireAdmin()
-  const { error } = await s.from('items').delete().eq('id', uuid(fd, 'id'))
-  if (error) fail('Could not delete the item.')
-  done()
+  const { s } = await requireAdmin();
+
+  const itemId = uuid(fd, 'id');
+
+  const { error } = await s
+    .from('items')
+    .delete()
+    .eq('id', itemId);
+
+  if (error) {
+    console.error('Supabase delete item error:', {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+
+    fail(`Could not delete item: ${error.message}`);
+  }
+
+  done();
 }
