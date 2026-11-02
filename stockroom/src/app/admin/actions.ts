@@ -81,18 +81,12 @@ export async function deleteItem(fd: FormData) {
 
   const { error } = await s
     .from('items')
-    .delete()
+    .update({ is_active: false })
     .eq('id', itemId);
 
   if (error) {
-    console.error('Supabase delete item error:', {
-      code: error.code,
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-    });
-
-    fail(`Could not delete item: ${error.message}`);
+    console.error('Archive item error:', error);
+    fail(`Could not archive item: ${error.message}`);
   }
 
   done();
