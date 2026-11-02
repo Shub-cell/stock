@@ -24,7 +24,9 @@ export default async function Category({
     .single()
 
   // Prevent customers from opening the archived category directly.
-  if (!cat || cat.name === 'Archived Items') notFound()
+
+if (!cat || cat.name === 'Archived Items') notFound()
+
 
   const q = (searchParams.q ?? '')
     .trim()
