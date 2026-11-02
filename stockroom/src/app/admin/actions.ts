@@ -76,17 +76,41 @@ export async function setQuantity(fd: FormData) {
 
 export async function deleteItem(fd: FormData) {
   const { s } = await requireAdmin();
-
   const itemId = uuid(fd, 'id');
 
-  const { error } = await s
-    .from('items')
-    .update({ is_active: false })
-    .eq('id', itemId);
+  // Check whether this item appears in order history.
+  const { count, error: checkError } = await s
+    .from('order_items')
+    .select('id', { count: 'exact', head: true })
+    .eq('item_id', itemId);
 
-  if (error) {
-    console.error('Archive item error:', error);
-    fail(`Could not archive item: ${error.message}`);
+  if (checkError) {
+    console.error('Check order history error:', checkError);
+    fail('Could not check item order history.');
+  }
+
+  if ((count ?? 0) > 0) {
+    // Preserve historical orders by archiving the item.
+    const { error } = await s
+      .from('items')
+      .update({ is_active: false })
+      .eq('id', itemId);
+
+    if (error) {
+      console.error('Archive item error:', error);
+      fail('Could not archive item.');
+    }
+  } else {
+    // No order history: permanently delete it.
+    const { error } = await s
+      .from('items')
+      .delete()
+      .eq('id', itemId);
+
+    if (error) {
+      console.error('Delete item error:', error);
+      fail('Could not delete item.');
+    }
   }
 
   done();

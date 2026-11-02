@@ -9,7 +9,9 @@ export default async function Admin({ searchParams }: { searchParams: { err?: st
   const { s } = await requireAdmin()
   const [{ data: cats }, { data: items }, { data: orders, error: ordersError }] = await Promise.all([
     s.from('categories').select('id, name').order('name'),
-    s.from('items').select('id, name, quantity, image_path, created_at, updated_at, categories(name)').order('updated_at', { ascending: false }),
+    s.from('items')
+  .select('id, name, quantity, image_path, created_at, updated_at, is_active, categories(name)')
+  .order('updated_at', { ascending: false }),
     s.from('orders').select('id, user_id, status, created_at, customer_name, customer_email, order_items(id, item_name, quantity)').order('created_at', { ascending: false }).limit(50),
   ])
   const total = (items ?? []).reduce((n, i) => n + i.quantity, 0)

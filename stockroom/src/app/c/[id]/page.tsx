@@ -12,7 +12,11 @@ export default async function Category({ params, searchParams }: { params: { id:
   if (!cat) notFound()
   const q = (searchParams.q ?? '').trim().slice(0, 60).replace(/[%_\\,()]/g, '')
   const sort = ['name', 'qty-asc', 'qty-desc'].includes(searchParams.sort ?? '') ? searchParams.sort! : 'name'
-  let query = s.from('items').select('id, name, quantity, image_path').eq('category_id', cat.id)
+  let  query = s
+  .from('items')
+  .select('id, name, quantity, image_path')
+  .eq('category_id', cat.id)
+  .eq('is_active', true)
   if (q) query = query.ilike('name', `%${q}%`)
   const { data: items } = await (sort === 'name' ? query.order('name') : query.order('quantity', { ascending: sort === 'qty-asc' }))
   return (

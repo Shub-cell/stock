@@ -7,8 +7,15 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
   const q = (searchParams.q ?? '').trim().slice(0, 60).replace(/[%_\\,()]/g, '')
 
   if (q) {
-    const { data } = await s.from('items').select('id, name, quantity, image_path').ilike('name', `%${q}%`).order('name').limit(100)
-    return (
+    const { data } = await s
+    .from('items')
+    .select('id, name, quantity, image_path')
+    .eq('is_active', true)
+    .ilike('name', `%${q}%`)
+    .order('name')
+    .limit(100)
+
+  return (
       <section>
         <h1 className="mb-1 text-xl font-semibold">Results for “{q}”</h1>
         <Link href="/" className="text-sm text-brand hover:underline">Back to categories</Link>
