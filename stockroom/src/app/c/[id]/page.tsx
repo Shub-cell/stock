@@ -1,0 +1,37 @@
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { db } from '@/lib/supabase/server'
+import ItemCard from '@/components/ItemCard'
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export default async function Category({ params, searchParams }: { params: { id: string }; searchParams: { q?: string; sort?: string } }) {
+  if (!UUID.test(params.id)) notFound()
+  const s = db()
+  const { data: cat } = await s.from('categories').select('id, name').eq('id', params.id).single()
+  if (!cat) notFound()
+  const q = (searchParams.q ?? '').trim().slice(0, 60).replace(/[%_\\,()]/g, '')
+  const sort = ['name', 'qty-asc', 'qty-desc'].includes(searchParams.sort ?? '') ? searchParams.sort! : 'name'
+  let query = s.from('items').select('id, name, quantity, image_path').eq('category_id', cat.id)
+  if (q) query = query.ilike('name', `%${q}%`)
+  const { data: items } = await (sort === 'name' ? query.order('name') : query.order('quantity', { ascending: sort === 'qty-asc' }))
+  return (
+    <section>
+      <Link href="/" className="text-sm text-brand hover:underline">Back to home</Link>
+      <h1 className="mb-4 mt-1 text-xl font-semibold">{cat.name}</h1>
+      <form className="mb-6 flex flex-wrap gap-2">
+        <input name="q" defaultValue={q} placeholder="Search this category" className="field max-w-xs" aria-label="Search this category" maxLength={60} />
+        <select name="sort" defaultValue={sort} className="field w-auto" aria-label="Sort items">
+          <option value="name">Name, A to Z</option>
+          <option value="qty-desc">Quantity, high to low</option>
+          <option value="qty-asc">Quantity, low to high</option>
+        </select>
+        <button className="btn">Apply</button>
+      </form>
+      <div className="mx-auto grid justify-center gap-6 [grid-template-columns:repeat(auto-fill,160px)]">
+        {(items ?? []).map((i) => <ItemCard key={i.id} item={i} />)}
+      </div>
+      {!items?.length && <p className="text-center text-sm text-ink/60">No items in this category{q ? ' match your search' : ' yet'}.</p>}
+    </section>
+  )
+}
