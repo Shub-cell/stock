@@ -4,8 +4,9 @@ import { notFound } from 'next/navigation'
 import { db } from '@/lib/supabase/server'
 import ItemCard from '@/components/ItemCard'
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const pageStart = Date.now()
+const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export default async function Category({
   params,
   searchParams,
@@ -13,6 +14,9 @@ export default async function Category({
   params: { id: string }
   searchParams: { q?: string; sort?: string }
 }) {
+  // Start a fresh timer for every request.
+  const pageStart = performance.now()
+
   if (!UUID.test(params.id)) notFound()
 
   const q = (searchParams.q ?? '')
@@ -25,14 +29,15 @@ export default async function Category({
     : 'name'
 
   const s = db()
-console.log('[CATEGORY] Reached database client setup:', Date.now())
-console.log(
-  '[CATEGORY] Time before DB client setup:',
-  Date.now() - pageStart,
-  'ms'
-)
-  // Start measuring the server-side Supabase request.
-  const startTime = Date.now()
+
+  console.log(
+    '[CATEGORY] Time before DB client setup:',
+    (performance.now() - pageStart).toFixed(2),
+    'ms'
+  )
+
+  // Measure the Supabase request separately.
+  const queryStart = performance.now()
 
   let query = s
     .from('categories')
@@ -55,10 +60,9 @@ console.log(
 
   const { data: cat, error } = await query.single()
 
-  // Log the time taken by the Supabase API request.
   console.log(
     '[CATEGORY] Supabase query duration:',
-    Date.now() - startTime,
+    (performance.now() - queryStart).toFixed(2),
     'ms'
   )
 
@@ -69,11 +73,13 @@ console.log(
     if (sort === 'qty-desc') return b.quantity - a.quantity
     return a.name.localeCompare(b.name)
   })
-console.log(
-  '[CATEGORY] Total server processing before render:',
-  Date.now() - startTime,
-  'ms'
-)
+
+  console.log(
+    '[CATEGORY] Total server processing before render:',
+    (performance.now() - pageStart).toFixed(2),
+    'ms'
+  )
+
   return (
     <section>
       <Link href="/" className="text-sm text-brand hover:underline">
