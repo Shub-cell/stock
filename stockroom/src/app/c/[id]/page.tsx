@@ -5,7 +5,7 @@ import { db } from '@/lib/supabase/server'
 import ItemCard from '@/components/ItemCard'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
+const pageStart = Date.now()
 export default async function Category({
   params,
   searchParams,
@@ -26,6 +26,11 @@ export default async function Category({
 
   const s = db()
 console.log('[CATEGORY] Reached database client setup:', Date.now())
+console.log(
+  '[CATEGORY] Time before DB client setup:',
+  Date.now() - pageStart,
+  'ms'
+)
   // Start measuring the server-side Supabase request.
   const startTime = Date.now()
 
