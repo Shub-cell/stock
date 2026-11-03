@@ -18,17 +18,38 @@ export default async function RootLayout({
 }) {
   const s = db()
 
+  const authStart = performance.now()
+
   const {
     data: { user },
+    error: authError,
   } = await s.auth.getUser()
 
-  const { data: p } = user
+  console.log(
+    '[LAYOUT] Supabase auth duration:',
+    (performance.now() - authStart).toFixed(2),
+    'ms',
+    'Auth error:',
+    !!authError
+  )
+
+  const profileStart = performance.now()
+
+  const { data: p, error: profileError } = user
     ? await s
         .from('profiles')
         .select('full_name, role')
         .eq('id', user.id)
         .single()
-    : { data: null }
+    : { data: null, error: null }
+
+  console.log(
+    '[LAYOUT] Profile query duration:',
+    (performance.now() - profileStart).toFixed(2),
+    'ms',
+    'Profile error:',
+    !!profileError
+  )
 
   return (
     <html lang="en">
