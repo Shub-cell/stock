@@ -26,6 +26,9 @@ export default async function Category({
 
   const s = db()
 
+  // Start measuring the server-side Supabase request.
+  const startTime = Date.now()
+
   let query = s
     .from('categories')
     .select(`
@@ -46,6 +49,13 @@ export default async function Category({
   }
 
   const { data: cat, error } = await query.single()
+
+  // Log the time taken by the Supabase API request.
+  console.log(
+    '[CATEGORY] Supabase query duration:',
+    Date.now() - startTime,
+    'ms'
+  )
 
   if (error || !cat || cat.name === 'Archived Items') notFound()
 
