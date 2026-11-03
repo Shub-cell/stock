@@ -13,7 +13,17 @@ export async function middleware(req: NextRequest) {
       },
     },
   })
-  const { data: { user } } = await s.auth.getUser() // validated against Supabase Auth, not just decoded
+ const authStart = performance.now()
+
+const { data: { user }, error } = await s.auth.getUser()
+
+console.log(
+  '[MIDDLEWARE] Supabase auth duration:',
+  (performance.now() - authStart).toFixed(2),
+  'ms',
+  'Auth error:',
+  !!error
+) // validated against Supabase Auth, not just decoded
   const open = ['/login', '/register'].includes(req.nextUrl.pathname)
   if (!user && !open) return NextResponse.redirect(new URL('/login', req.url))
   return res
