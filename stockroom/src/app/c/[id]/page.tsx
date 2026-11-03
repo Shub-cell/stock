@@ -64,7 +64,11 @@ export default async function Category({
     if (sort === 'qty-desc') return b.quantity - a.quantity
     return a.name.localeCompare(b.name)
   })
-
+console.log(
+  '[CATEGORY] Total server processing before render:',
+  Date.now() - startTime,
+  'ms'
+)
   return (
     <section>
       <Link href="/" className="text-sm text-brand hover:underline">
