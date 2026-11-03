@@ -15,41 +15,45 @@ export default async function Category({
 }) {
   if (!UUID.test(params.id)) notFound()
 
-  const s = db()
-
-  const { data: cat } = await s
-    .from('categories')
-    .select('id, name')
-    .eq('id', params.id)
-    .single()
-
-  // Prevent customers from opening the archived category directly.
-
-if (!cat || cat.name === 'Archived Items') notFound()
-
-
   const q = (searchParams.q ?? '')
     .trim()
     .slice(0, 60)
-    .replace(/[%\_\\,()]/g, '')
+    .replace(/[%*\\_,()]/g, '')
 
   const sort = ['name', 'qty-asc', 'qty-desc'].includes(searchParams.sort ?? '')
     ? searchParams.sort!
     : 'name'
 
+  const s = db()
+
   let query = s
-    .from('items')
-    .select('id, name, quantity, image_path')
-    .eq('category_id', cat.id)
-    .eq('is_active', true)
+    .from('categories')
+    .select(`
+      id,
+      name,
+      items (
+        id,
+        name,
+        quantity,
+        image_path
+      )
+    `)
+    .eq('id', params.id)
+    .eq('items.is_active', true)
 
-  if (q) query = query.ilike('name', `%${q}%`)
+  if (q) {
+    query = query.ilike('items.name', `%${q}%`)
+  }
 
-  const { data: items } = await (
-    sort === 'name'
-      ? query.order('name')
-      : query.order('quantity', { ascending: sort === 'qty-asc' })
-  )
+  const { data: cat, error } = await query.single()
+
+  if (error || !cat || cat.name === 'Archived Items') notFound()
+
+  const items = (cat.items ?? []).sort((a, b) => {
+    if (sort === 'qty-asc') return a.quantity - b.quantity
+    if (sort === 'qty-desc') return b.quantity - a.quantity
+    return a.name.localeCompare(b.name)
+  })
 
   return (
     <section>
@@ -84,12 +88,12 @@ if (!cat || cat.name === 'Archived Items') notFound()
       </form>
 
       <div className="mx-auto grid justify-center gap-6 [grid-template-columns:repeat(auto-fill,160px)]">
-        {(items ?? []).map((i) => (
+        {items.map((i) => (
           <ItemCard key={i.id} item={i} />
         ))}
       </div>
 
-      {!items?.length && (
+      {!items.length && (
         <p className="text-center text-sm text-ink/60">
           No items in this category
           {q ? ' match your search' : ' yet'}.
