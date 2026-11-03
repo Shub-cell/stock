@@ -25,7 +25,7 @@ export default async function Category({
     : 'name'
 
   const s = db()
-
+console.log('[CATEGORY] Reached database client setup:', Date.now())
   // Start measuring the server-side Supabase request.
   const startTime = Date.now()
 
